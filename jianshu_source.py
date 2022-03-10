@@ -1,13 +1,14 @@
+
 # ******* Make RDB for jianshu
 """
 Input -> https://www.jianshu.com/
 Ouput -> Append sqlite3 jianshu.db: 
-         subject, subject_content, views, author, comment_cnt, like_cnt, reward_cnt, timestamp
+         subject, subject_content, views, author, comment_cnt, like_cnt, reward_cnt, timestamp, post_key
 """
 from requests_html import HTMLSession
 import pandas as pd
 import time
-import re
+import re, random, string
 import csv, sqlite3
 session = HTMLSession()
 url = "https://www.jianshu.com/" # 爬取路径
@@ -15,8 +16,6 @@ r = session.get(url)
 
 # 获取页面对应的css方法：1）F12 / inspector 2) 找到要截取的页面的部分 3）右键copy->copy Selector
 selector = '#list-container'
-# raw results
-raw_results = r.html.find(selector)
 
 # 1) Obtain subject + subject_topic
 def get_text_link_from_sel_jianshu(sel:str, url:str):
@@ -94,7 +93,7 @@ reward_cnt = []
 views, author, comment_cnt, like_cnt, reward_cnt = view_author_comment_like_reward(s) 
 
 # 4) merge all data as dataframe
-df = pd.DataFrame(columns=['subject', 'subject_content', 'views', 'author', 'comment_cnt', 'like_cnt', 'reward_cnt', 'timestamp'])  
+df = pd.DataFrame(columns=['subject', 'subject_content', 'views', 'author', 'comment_cnt', 'like_cnt', 'reward_cnt', 'timestamp', 'post_key'])  
 df['subject'] = s[0]
 df['subject_content'] = s[1]
 df['views'] = views
@@ -104,7 +103,7 @@ df['like_cnt'] = like_cnt
 df['reward_cnt'] = reward_cnt
 timestamp = [time.strftime("%Y%m%dT%H%M%S", time.localtime())] * len(views)
 df['timestamp'] = timestamp
-
+df['post_key'] = [time.strftime("%Y%m%dT%H%M%S", time.localtime()) + "".join(random.choices(string.ascii_letters, k = 8))] * len(views)
 # ### Import df to sql
 
 conn= sqlite3.connect("/Users/mikexie/pipeline/jianshu.db")
